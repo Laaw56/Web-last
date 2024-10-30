@@ -1,0 +1,99 @@
+﻿@page "/documents/details"
+@attribute [Authorize(Roles = "Employee, Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using ValidationOrders.Data
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Сведения о документе</PageTitle>
+
+<h1>Сведения о документе</h1>
+
+<div>
+@*     <h2>Document</h2> *@
+    <hr />
+    @if (document is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Номер документа</dt>
+            <dd class="col-sm-10">@document.Number</dd>
+            <dt class="col-sm-2">Дата создания документа</dt>
+            <dd class="col-sm-10">@document.RegistrationDate</dd>
+            <dt class="col-sm-2">Дата начала оптуска</dt>
+            <dd class="col-sm-10">@document.VacationStartDate</dd>
+            <dt class="col-sm-2">Дата окончания отпуска</dt>
+            <dd class="col-sm-10">@document.VacationEndDate</dd>
+@*             <dt class="col-sm-2">Номер сотрудника</dt>
+            <dd class="col-sm-10">@document.EmployeeId</dd>
+            <dt class="col-sm-2">Номер оптуска</dt>
+            <dd class="col-sm-10">@document.VacationId</dd> *@
+            <dt class="col-sm-2">Сотрудник</dt>
+            <dd class="col-sm-10">@employee.LastName @employee.FirstName @employee.MiddleName</dd>
+            <dt class="col-sm-2">Отпуск</dt>
+            <dd class="col-sm-10">Тип: @vacation.Type; Оплата: @vacation.Payment; Льготы: @vacation.Benefit</dd>
+        </dl>
+        <div>
+            <a href="@GetUrl("edit")">Редактировать</a> |
+            <a href="@GetUrl("back")">Назад к списку</a>
+        </div>
+    }
+</div>
+
+@code {
+    private Document? document;
+    private Employee? employee;
+    private Vacation? vacation;
+
+    [SupplyParameterFromQuery(Name = "id")]
+    private int Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "employeeid")]
+    public int? EmployeeId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "vacationid")]
+    public int? VacationId { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        document = await context.Documents.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (document is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+
+        employee = await context.Employees.FirstOrDefaultAsync(e => e.Id == document.EmployeeId);
+        vacation = await context.Vacations.FirstOrDefaultAsync(v => v.Id == document.VacationId);
+    }
+
+    private string GetUrl(string action)
+    {
+        string url = "/documents";
+
+        if (action == "edit")
+        {
+            url += $"/edit?id={Id}&";
+        }
+        else
+        { 
+            url += "?"; 
+        }
+
+        if (EmployeeId.HasValue)
+        {
+            url += $"employeeid={EmployeeId.Value}";
+        }
+        else if (VacationId.HasValue)
+        {
+            url += $"vacationid={VacationId.Value}";
+        }
+
+        return url;
+    }
+}

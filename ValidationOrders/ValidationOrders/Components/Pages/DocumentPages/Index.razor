@@ -1,0 +1,87 @@
+﻿@page "/documents"
+@attribute [Authorize(Roles = "Employee, Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using ValidationOrders.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Документы</PageTitle>
+
+<h1>Документы</h1>
+
+<p>
+    @{
+        string url = "documents/create";
+        if (EmployeeId.HasValue)
+        {
+            url += $"?employeeid={EmployeeId.Value}";
+        }
+        else if (VacationId.HasValue)
+        {
+            url += $"?vacationid={VacationId.Value}";
+        }
+    }
+    <a href="@url">Добавить</a>
+</p>
+
+<QuickGrid Class="table" Items="GetFilteredDocuments()">
+    <PropertyColumn Property="document => document.Number" Title="Номер документа" />
+    <PropertyColumn Property="document => document.RegistrationDate" Title="Дата регистрации документа" />
+    <PropertyColumn Property="document => document.VacationStartDate" Title="Дата начала отпуска" />
+    <PropertyColumn Property="document => document.VacationEndDate" Title="Дата окончания отпуска" />
+    <PropertyColumn Property="document => document.EmployeeId" Title="Номер сотрудника" />
+    <PropertyColumn Property="document => document.VacationId" Title="Номер отпуска" />
+
+    <TemplateColumn Context="document">
+        @{
+            string url = $"id={document.Id}";
+            if (EmployeeId.HasValue)
+            {
+                url += $"&employeeid={EmployeeId.Value}";
+            }
+            else if (VacationId.HasValue)
+            {
+                url += $"&vacationid={VacationId.Value}";
+            }
+        }
+        <a href="@($"/documents/edit?{url}")">Редактировать</a> |
+        <a href="@($"/documents/details?{url}")">Подробнее</a> |
+        <a href="@($"/documents/delete?{url}")">Удалить</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    [SupplyParameterFromQuery(Name = "employeeid")]
+    public int? EmployeeId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "vacationid")]
+    public int? VacationId { get; set; }
+
+    private ApplicationDbContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    private IQueryable<Document> GetFilteredDocuments()
+    {
+        var query = context.Documents.AsQueryable();
+
+        if (EmployeeId.HasValue)
+        {
+            query = query.Where(w => w.EmployeeId == EmployeeId.Value);
+        }
+        else if (VacationId.HasValue)
+        {
+            query = query.Where(w => w.VacationId == VacationId.Value);
+        }
+
+        return query;
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

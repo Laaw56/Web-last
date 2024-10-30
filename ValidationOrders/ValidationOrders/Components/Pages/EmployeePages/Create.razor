@@ -1,0 +1,75 @@
+﻿@page "/employees/create"
+@attribute [Authorize(Roles = "Employee, Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using ValidationOrders.Data
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Создание сотрудника</PageTitle>
+
+<h1>Создать сотрудника</h1>
+
+@* <h2>Сотрудника</h2> *@
+<hr />      
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Employee" OnValidSubmit="AddEmployee" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            @* <ValidationSummary class="text-danger" /> *@
+            <div class="mb-3">
+                <label for="lastname" class="form-label">Фамилия:</label> 
+                <InputText id="lastname" @bind-Value="Employee.LastName" class="form-control" /> 
+                <ValidationMessage For="() => Employee.LastName" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="firstname" class="form-label">Имя:</label> 
+                <InputText id="firstname" @bind-Value="Employee.FirstName" class="form-control" /> 
+                <ValidationMessage For="() => Employee.FirstName" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="middlename" class="form-label">Отчество:</label> 
+                <InputText id="middlename" @bind-Value="Employee.MiddleName" class="form-control" /> 
+                <ValidationMessage For="() => Employee.MiddleName" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="position" class="form-label">Должность:</label> 
+                <InputText id="position" @bind-Value="Employee.Position" class="form-control" /> 
+                <ValidationMessage For="() => Employee.Position" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="division" class="form-label">Подразделение:</label> 
+                <InputText id="division" @bind-Value="Employee.Division" class="form-control" /> 
+                <ValidationMessage For="() => Employee.Division" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="employmentdate" class="form-label">Дата приема на работу:</label> 
+                <InputDate id="employmentdate" @bind-Value="Employee.EmploymentDate" class="form-control" /> 
+                <ValidationMessage For="() => Employee.EmploymentDate" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/employees">Назад к списку</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Employee Employee { get; set; } = new();
+    protected override void OnInitialized()
+    {
+        Employee.EmploymentDate = DateOnly.FromDateTime(DateTime.Now);
+    }
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddEmployee()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Employees.Add(Employee);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/employees");
+    }
+}

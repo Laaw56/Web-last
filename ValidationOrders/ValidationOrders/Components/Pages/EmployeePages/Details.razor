@@ -1,0 +1,58 @@
+﻿@page "/employees/details"
+@attribute [Authorize(Roles = "Employee, Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using ValidationOrders.Data
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Сведения о сотруднике</PageTitle>
+
+<h1>Сведения о сотруднике</h1>
+
+<div>
+@*     <h2>Employee</h2> *@
+    <hr />
+    @if (employee is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Фамилия</dt>
+            <dd class="col-sm-10">@employee.LastName</dd>
+            <dt class="col-sm-2">Имя</dt>
+            <dd class="col-sm-10">@employee.FirstName</dd>
+            <dt class="col-sm-2">Отчество</dt>
+            <dd class="col-sm-10">@employee.MiddleName</dd>
+            <dt class="col-sm-2">Должность</dt>
+            <dd class="col-sm-10">@employee.Position</dd>
+            <dt class="col-sm-2">Подразделение</dt>
+            <dd class="col-sm-10">@employee.Division</dd>
+            <dt class="col-sm-2">Дата приема на работу</dt>
+            <dd class="col-sm-10">@employee.EmploymentDate</dd>
+        </dl>
+        <div>
+            <a href="@($"/employees/edit?id={employee.Id}")">Редактировать</a> |
+            <a href="@($"/employees")">Назад к списку</a>
+        </div>
+    }
+</div>
+
+@code {
+    private Employee? employee;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        employee = await context.Employees.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (employee is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

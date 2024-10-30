@@ -1,0 +1,101 @@
+﻿@page "/vacations/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using ValidationOrders.Data
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Редактирование данных об отпуске</PageTitle>
+
+<h1>Редактировать данные об отпуске</h1>
+
+@* <h2>Vacation</h2> *@
+<hr />
+@if (Vacation is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Vacation" OnValidSubmit="UpdateVacation" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <input type="hidden" name="Vacation.Id" value="@Vacation.Id" />
+                <div class="mb-3">
+                    <label for="type" class="form-label">Тип отпуска:</label>
+                    <InputText id="type" @bind-Value="Vacation.Type" class="form-control" />
+                    <ValidationMessage For="() => Vacation.Type" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="payment" class="form-label">Оплата отпуска:</label>
+                    <InputText id="payment" @bind-Value="Vacation.Payment" class="form-control" />
+                    <ValidationMessage For="() => Vacation.Payment" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="benefit" class="form-label">Льготы по отпуску:</label>
+                    <InputText id="benefit" @bind-Value="Vacation.Benefit" class="form-control" />
+                    <ValidationMessage For="() => Vacation.Benefit" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/vacations">Назад к списку</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Vacation? Vacation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Vacation ??= await context.Vacations.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (Vacation is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateVacation()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Vacation!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!VacationExists(Vacation!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/vacations");
+    }
+
+    private bool VacationExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Vacations.Any(e => e.Id == id);
+    }
+}

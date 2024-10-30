@@ -1,0 +1,124 @@
+﻿@page "/documents/create"
+@attribute [Authorize(Roles = "Employee, Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using ValidationOrders.Data
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Создание документа</PageTitle>
+
+<h1>Создать документ</h1>
+
+@* <h2>Документ</h2> *@
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Document" OnValidSubmit="AddDocument" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            @* <ValidationSummary class="text-danger" /> *@
+            <div class="mb-3">
+                <label for="number" class="form-label">Номер документа:</label> 
+                <InputText id="number" @bind-Value="Document.Number" class="form-control" />
+                <ValidationMessage For="() => Document.Number" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="registrationdate" class="form-label">Дата регистрации документа:</label> 
+                <InputDate id="registrationdate" @bind-Value="Document.RegistrationDate" class="form-control" /> 
+                <ValidationMessage For="() => Document.RegistrationDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="vacationstartdate" class="form-label">Дата начала отпуска:</label> 
+                <InputDate id="vacationstartdate" @bind-Value="Document.VacationStartDate" class="form-control" /> 
+                <ValidationMessage For="() => Document.VacationStartDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="vacationenddate" class="form-label">Дата окончания отпуска:</label>
+                <InputDate id="vacationenddate" @bind-Value="Document.VacationEndDate" class="form-control" /> 
+                <ValidationMessage For="() => Document.VacationEndDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="employeeid" class="form-label">Сотрудник:</label> 
+                @* <label for="employeeid" class="form-label">Номер сотрудника:</label>  *@
+                @* <InputNumber id="employeeid" @bind-Value="Document.EmployeeId" class="form-control" />  *@
+                <InputSelect id="employeeid" @bind-Value="Document.EmployeeId" class="form-control">
+                    @foreach (Employee employee in employees)
+                    {
+                        <option value="@employee.Id">@employee.LastName @employee.FirstName @employee.MiddleName</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => Document.EmployeeId" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="vacationid" class="form-label">Отпуск:</label>
+                @* <label for="vacationid" class="form-label">Номер отпуска:</label>  *@
+                @* <InputNumber id="vacationid" @bind-Value="Document.VacationId" class="form-control" />  *@
+                <InputSelect id="vacationid" @bind-Value="Document.VacationId" class="form-control">
+                    @foreach (Vacation vacation in vacations)
+                    {
+                        <option value="@vacation.Id">Тип: @vacation.Type; Оплата: @vacation.Payment; Льготы: @vacation.Benefit</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => Document.VacationId" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="@GetUrl()">Назад к списку</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Document Document { get; set; } = new();
+
+    [SupplyParameterFromQuery(Name = "id")]
+    private int Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "employeeid")]
+    public int? EmployeeId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "vacationid")]
+    public int? VacationId { get; set; }
+
+    List<Employee> employees = new();
+    List<Vacation> vacations = new();
+
+    protected override void OnInitialized()
+    {  
+        using var context = DbFactory.CreateDbContext();
+        employees = context.Employees.ToList();
+        vacations = context.Vacations.ToList();
+        Document.EmployeeId = EmployeeId ?? 0;
+        Document.VacationId = VacationId ?? 0;
+        Document.RegistrationDate = DateOnly.FromDateTime(DateTime.Now);
+        Document.VacationStartDate = DateOnly.FromDateTime(DateTime.Now);
+        Document.VacationEndDate = DateOnly.FromDateTime(DateTime.Now);
+    }
+
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddDocument()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Documents.Add(Document);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo(GetUrl());
+    }
+
+    private string GetUrl()
+    {
+        if (EmployeeId.HasValue)
+        {
+            return $"/documents?employeeid={EmployeeId.Value}";
+        }
+        else if (VacationId.HasValue)
+        {
+            return $"/documents?vacationid={VacationId.Value}";
+        }
+
+        return "/documents";
+    }
+}

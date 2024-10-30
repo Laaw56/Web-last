@@ -1,0 +1,40 @@
+﻿@page "/vacations"
+@attribute [Authorize(Roles = "Employee, Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using ValidationOrders.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+
+<PageTitle>Отпуски</PageTitle>
+
+<h1>Отпуски</h1>
+
+<p>
+    <a href="vacations/create">Добавить</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Vacations">
+    <PropertyColumn Property="vacation => vacation.Type" Title="Тип отпуска" />
+    <PropertyColumn Property="vacation => vacation.Payment" Title="Оплата отпуска" />
+    <PropertyColumn Property="vacation => vacation.Benefit" Title="Льготы по отпуску" />
+
+    <TemplateColumn Context="vacation">
+        <a href="@($"documents?vacationid={vacation.Id}")">Документы</a> |
+        <a href="@($"vacations/edit?id={vacation.Id}")">Редактировать</a> |
+        <a href="@($"vacations/details?id={vacation.Id}")">Подробности</a> |
+        <a href="@($"vacations/delete?id={vacation.Id}")">Удалить</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private ApplicationDbContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

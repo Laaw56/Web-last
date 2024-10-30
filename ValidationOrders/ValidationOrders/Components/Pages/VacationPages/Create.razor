@@ -1,0 +1,56 @@
+﻿@page "/vacations/create"
+@attribute [Authorize(Roles = "Employee, Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using ValidationOrders.Data
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Создание отпуска</PageTitle>
+
+<h1>Создать отпуск</h1>
+
+@* <h2>Отпуск</h2> *@
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Vacation" OnValidSubmit="AddVacation" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            @* <ValidationSummary class="text-danger" /> *@
+            <div class="mb-3">
+                <label for="type" class="form-label">Тип отпуска:</label> 
+                <InputText id="type" @bind-Value="Vacation.Type" class="form-control" /> 
+                <ValidationMessage For="() => Vacation.Type" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="payment" class="form-label">Оплата отпуска:</label> 
+                <InputText id="payment" @bind-Value="Vacation.Payment" class="form-control" />
+                <ValidationMessage For="() => Vacation.Payment" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="benefit" class="form-label">Льготы по отпуску:</label> 
+                <InputText id="benefit" @bind-Value="Vacation.Benefit" class="form-control" /> 
+                <ValidationMessage For="() => Vacation.Benefit" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/vacations">Назад к списку</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Vacation Vacation { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddVacation()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Vacations.Add(Vacation);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/vacations");
+    }
+}

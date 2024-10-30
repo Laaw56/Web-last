@@ -1,0 +1,97 @@
+﻿@page "/documents/delete"
+@attribute [Authorize(Roles = "Admin")]
+
+@using Microsoft.EntityFrameworkCore
+@using ValidationOrders.Data
+@inject IDbContextFactory<ValidationOrders.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Удаление документа</PageTitle>
+
+<h1>Удалить документ</h1>
+
+<p>Вы действительно хотите это сделать?</p>
+<div>
+    <h2>Документ</h2>
+    <hr />
+    @if (document is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Номер документа</dt>
+            <dd class="col-sm-10">@document.Number</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Дата регистрации документа</dt>
+            <dd class="col-sm-10">@document.RegistrationDate</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Дата начала отпуска</dt>
+            <dd class="col-sm-10">@document.VacationStartDate</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Дата окончания отпуска</dt>
+            <dd class="col-sm-10">@document.VacationEndDate</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Номер сотрудника</dt>
+            <dd class="col-sm-10">@document.EmployeeId</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Номер отпуска</dt>
+            <dd class="col-sm-10">@document.VacationId</dd>
+        </dl>
+        <EditForm method="post" Model="document" OnValidSubmit="DeleteDocument" FormName="delete" Enhance>
+            <button type="submit" class="btn btn-danger" disabled="@(document is null)">Удалить</button> |
+            <a href="@GetUrl()">Назад к списку</a>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private Document? document;
+
+    [SupplyParameterFromQuery(Name = "id")]
+    private int Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "employeeid")]
+    public int? EmployeeId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "vacationid")]
+    public int? VacationId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        document = await context.Documents.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (document is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    private async Task DeleteDocument()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Documents.Remove(document!);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo(GetUrl());
+    }
+
+    private string GetUrl()
+    {
+        if (EmployeeId.HasValue)
+        {
+            return $"/documents?employeeid={EmployeeId.Value}";
+        }
+        else if (VacationId.HasValue)
+        {
+            return $"/documents?vacationid={VacationId.Value}";
+        }
+
+        return "/documents";
+    }
+}
