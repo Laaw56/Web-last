@@ -1,4 +1,4 @@
-﻿@page "/importexcel"
+@page "/importexcel"
 @attribute [Authorize(Roles = "Admin")]
 
 @rendermode InteractiveServer
@@ -111,6 +111,7 @@ else
 
         isLoading = false;
     }
+
     public async Task GetDataTableFromExcelAsync(FileStream file)
     {
         using (var context = DbFactory.CreateDbContext())
@@ -123,6 +124,10 @@ else
 
                 try
                 {
+                    int EmployeeCount = await context.Employees.CountAsync();
+                    int VacationCount = await context.Vacations.CountAsync();
+                    int DocumentCount = await context.Documents.CountAsync();
+
                     foreach (IXLWorksheet worksheet in workbook.Worksheets)
                     {
                         errindexrow = 1;
@@ -157,7 +162,6 @@ else
                                 var range = worksheet.RangeUsed();
                                 var table = range!.AsTable();
 
-
                                 vacation.Id = int.Parse(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "Id").RangeAddress.FirstAddress.ColumnNumber).Value.ToString());
                                 vacation.Type = row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "Type").RangeAddress.FirstAddress.ColumnNumber).Value.ToString();
                                 vacation.Payment = row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "Payment").RangeAddress.FirstAddress.ColumnNumber).Value.ToString();
@@ -182,8 +186,8 @@ else
                                 document.RegistrationDate = DateOnly.ParseExact(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "RegistrationDate").RangeAddress.FirstAddress.ColumnNumber).Value.ToString().Split(' ')[0], "dd.MM.yyyy");
                                 document.VacationStartDate = DateOnly.ParseExact(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "VacationStartDate").RangeAddress.FirstAddress.ColumnNumber).Value.ToString().Split(' ')[0], "dd.MM.yyyy");
                                 document.VacationEndDate = DateOnly.ParseExact(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "VacationEndDate").RangeAddress.FirstAddress.ColumnNumber).Value.ToString().Split(' ')[0], "dd.MM.yyyy");
-                                document.EmployeeId = int.Parse(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "EmployeeId").RangeAddress.FirstAddress.ColumnNumber).Value.ToString());
-                                document.VacationId = int.Parse(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "VacationId").RangeAddress.FirstAddress.ColumnNumber).Value.ToString());
+                                document.EmployeeId = int.Parse(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "EmployeeId").RangeAddress.FirstAddress.ColumnNumber).Value.ToString()) + EmployeeCount;
+                                document.VacationId = int.Parse(row.Cell(table.FindColumn(c => c.FirstCell().Value.ToString() == "VacationId").RangeAddress.FirstAddress.ColumnNumber).Value.ToString()) + VacationCount;
 
                                 documentsList.Add(document);
                             }
